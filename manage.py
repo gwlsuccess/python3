@@ -15,13 +15,11 @@ Migrate(app,db)
 # 通过管理器对象集成迁移命令
 manager.add_command('db',MigrateCommand)
 
-@app.route('/')
-def index():
-    # 请求对象session
-    session['name']=2018
-    return 'index'
+
 
 if __name__ == '__main__':
     # app.run(debug=True)
+    # 查看蓝图是否生效，打印路由映射
+    print(app.url_map)
     # 必须配置项目参数　runserver
     manager.run()
