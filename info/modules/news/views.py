@@ -1,4 +1,4 @@
-from flask import session
+from flask import session,render_template
 # 导入蓝图对象
 from . import news_blue
 # 使用蓝图对象
@@ -6,4 +6,4 @@ from . import news_blue
 def index():
     # 请求对象session
     session['name']=2018
-    return 'index'
+    return render_template('news/index.html')
