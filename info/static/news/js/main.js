@@ -144,14 +144,44 @@ $(function(){
         }
 
         // 发起注册请求
+    　　//　构造请求参数
+        var params ={
+            'mobile':mobile,
+            'password':password,
+            'sms_code':smscode
+        }
 
+        // 发送ajax请求
+        .ajax({
+            url:'/password/regsiter',
+            type:'post',
+            data:JSON.stringify(params),
+            contentType:'application/json',
+            header:{
+                'X-CSRFToken':getCookie('csrf_token')
+            },
+            success:function (resp) {
+                if(resp.errno == '0'){
+                    location.reload()
+                }
+                else {
+                    alert(resp.errmsg)
+                    $("#register-password-err").html(resp.errmsg);
+                    $("#register-password-err").show();
+                }
+            }
+        })
     })
 })
 
 var imageCodeId = ""
 
-// TODO 生成一个图片验证码的编号，并设置页面中图片验证码img标签的src属性
+// 生成一个图片验证码的编号，并设置页面中图片验证码img标签的src属性
 function generateImageCode() {
+    imageCodeId = generateUUID()
+    //　构造　url
+    var url = '/passport/image_code?image_code_id=' + imageCodeId
+    $('.get_pic_code').attr('src',url)
 
 }
 
@@ -174,7 +204,45 @@ function sendSMSCode() {
         return;
     }
 
-    // TODO 发送短信验证码
+    // 发送短信验证码
+    var parms ={
+        "mobile":mobile,
+        "image_code":imageCode,
+        "image_code_id":imageCodeId
+    }
+    $.ajax({
+        url:'/passport/sms_code',
+        type:'post',
+        data:JSON.stringify(parms),
+        contentType: 'application/json',
+        // 请求头，前端需要把浏览器的cookie中的csrf_token手动的放入到请求体中
+        headers:{
+            'X-CSRFToken':getCookie('csrf_token')
+        },
+        success:function (resp) {
+            if(resp.errno=='0'){
+               var num = 60;
+               var timer = setInterval(function () {
+                   if(num == 1){
+                       clearInterval(timer)
+                       $('.get_code').html("点击获取验证码")
+                       $('.get_code').attr("onclick", "sendSMSCode();")
+
+                   }else{
+                      num -=1;
+                      $('.get_code').html(num+'ｓ')
+                   }
+
+               },1000)
+            }else{
+                alert(resp.errmsg)
+                $('.get_code').html("点击获取验证码")
+                $('.get_code').attr("onclick", "sendSMSCode();")
+
+            }
+
+        }
+    })
 }
 
 // 调用该函数模拟点击左侧按钮

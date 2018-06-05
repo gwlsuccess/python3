@@ -6,6 +6,10 @@ from flask_migrate import Migrate,MigrateCommand
 
 # 导入info模块创建实例对象app
 from info import create_app,db
+
+# 导入models,创建数据库时需要
+from info import models
+
 app = create_app('development')
 
 # 实例化管理器对象
@@ -14,7 +18,6 @@ manager = Manager(app)
 Migrate(app,db)
 # 通过管理器对象集成迁移命令
 manager.add_command('db',MigrateCommand)
-
 
 
 if __name__ == '__main__':
