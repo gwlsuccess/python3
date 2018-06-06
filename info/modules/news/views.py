@@ -2,7 +2,7 @@ from flask import session,render_template,current_app,jsonify
 # 导入蓝图对象
 from . import news_blue
 # 导入模型类User 和 News
-from info.models import User,News
+from info.models import User,News,Category
 # 导入自定义状态码
 from info.utils.response_code import RET
 
@@ -34,14 +34,30 @@ def index():
         return jsonify(errno =RET.DBERR,errmsg ='数据查询失败')
     if not news_list:
         return jsonify(errno =RET.NODATA,errmsg ='没有新闻数据')
-    # 遍历对象之后，然后在列表中以字典形式保存
+
+    # 遍历对象之后，然后在列表中以字典形式保存 news.to_dict()
     news_dict_list = []
     for news in news_list:
         news_dict_list.append(news.to_dict())
 
+    # 2018/6/6 --2 首页新闻数据的分类展示
+    try:
+        categories = Category.query.all()
+    except Exception  as e:
+        current_app.logger.error(e)
+        return jsonify(errno =RET.DBERR,errmsg ='分类新闻查询失败')
+    if not categories:
+        return jsonify(errno =RET.NODATA ,errmsg ='无新闻分类信息')
+    # 定义一个容器，保存查询的数据
+    category_list = []
+    for category in categories:
+        category_list.append(category.to_dict())
+
+
     data = {
         'user_info':user.to_dict() if user else None,
-        'news_dict_list':news_dict_list
+        'news_dict_list':news_dict_list,
+        'category_list':category_list
     }
 
     return render_template('news/index.html',data=data)
