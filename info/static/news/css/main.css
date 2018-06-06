@@ -68,7 +68,7 @@ body{
     height:30px;
     overflow: hidden;
     margin-top:15px;
-    display:none;    
+    /*display:none;    －－未注释之前，用户登陆状态不显示 */
 }
 
 .user_login img{
