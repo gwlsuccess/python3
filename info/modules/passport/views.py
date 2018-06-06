@@ -30,15 +30,15 @@ def image_code_id():
         response.headers['Content-Type'] = 'image/jpg'
         return response
 
-@passport_blu.route('/sms_code',methods=['POST'])
 
+@passport_blu.route('/sms_code',methods=['POST'])
 def send_sms_code():
     mobile = request.json.get('mobile')
     image_code = request.json.get('image_code')
     image_code_id = request.json.get('image_code_id')
     if not all([mobile,image_code,image_code_id]):
         return jsonify(errno=RET.PARAMERR,errmsg='参数不完整')
-    if not re.match(r'^1[3456789]\d{9}$',mobile):
+    if not re.match(r'1[3456789]\d{9}$',mobile):
         return jsonify(errno=RET.PARAMERR,errmsg='手机号不符合格式')
     try:
         real_image_code = redis_store.get('ImageCode_'+ image_code_id)
@@ -66,6 +66,7 @@ def send_sms_code():
             return jsonify(errno=RET.DATAEXIST,errmsg='该手机号已注册')
 
         sms_code = '%06d'%random.randint(0,999999)
+        # sms_code = 666666
     try:
         redis_store.setex('SMSCode_' + mobile,constants.SMS_CODE_REDIS_EXPIRES,sms_code)
     except Exception as e:
@@ -86,7 +87,7 @@ def send_sms_code():
 
 #　用户注册视图接口
 @passport_blu.route('/register',methods=['POST'])
-def regsiter():
+def register():
     # """
     # 用户注册
     # 1、获取参数，mobile/sms_code/password
@@ -116,7 +117,7 @@ def regsiter():
       if not all([mobile,sms_code,password]):
           return jsonify(errno = RET.PARAMERR,errmsg ='输入的信息不完整')
 
-      if not re.match(r'^1[3456789]\d{9}$', mobile):
+      if not re.match(r'1[3456789]\d{9}$', mobile):
           return jsonify(errno=RET.PARAMERR, errmsg='手机号格式错误')
 
       try:
@@ -136,11 +137,12 @@ def regsiter():
       # 验证用户的手机号是否已注册，根据手机号进行查询mysql数据库,
       try:
           user = User.query.filter_by(mobile = mobile).first()
+          print(user)
       except Exception as e:
           current_app.logger.error(e)
           return jsonify(errno = RET.DBERR,errmsg ='查询用户信息失败')
       else:
-          if user is None:
+          if user is not None:
               return jsonify(errno = RET.DATAEXIST,errmsg ='该用户已存在')
 
       #  创建模型类，保存数据到mysql数据库
@@ -149,6 +151,12 @@ def regsiter():
       user.password = password
       user.mobile = mobile
       user.nick_name = mobile
+
+
+      # print(user.mobile)
+      # print(user.password)
+      # print(user.nick_name)
+
       # 提交用户数据到数据库中
       try:
           db.session.add(user)
@@ -164,6 +172,33 @@ def regsiter():
       session['nick_name'] = mobile
       return jsonify(errno = RET.OK,errmsg ='注册成功')
 
-# # 登陆用户
-# @passport_blu.route('/login',methods= ['POST'])
-# def login():
+# 登陆用户 post 请求
+@passport_blu.route('/login',methods= ['POST'])
+def login():
+    mobile = request.json.get('mobile')
+    password = request .json.get('password')
+
+    if not all([mobile,password]):
+        return jsonify(errno = RET.PARAMERR,errmsg ='参数缺失')
+
+    if not re.match(r'1[3456789]\d{9}$', mobile):
+        return jsonify(errno=RET.PARAMERR, errmsg='手机号格式错误')
+    try:
+        #　调用 models.py中的　User 类，查询数据库，判断用户是否注册
+        user = User.query.filter_by(mobile = mobile).first()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg='查询用户信息失败')
+    if not user:
+        return jsonify(errno=RET.NODATA , errmsg='用户未注册')
+
+    # 验证用户输入的密码是否正确，调用models.py 中的方法 check_password()验证
+    if user is None or not user.check_password(password):
+        return jsonify(errno=RET.DATAERR, errmsg='输入的用户名或密码错误')
+    # 缓存用户信息
+    session['mobile'] = user.mobile
+    session['user_id'] = user.id
+    session['nick_name'] = user.nick_name
+    # 返回结果给浏览器端
+    return jsonify(errno=RET.OK, errmsg='OK')
+

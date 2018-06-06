@@ -110,6 +110,31 @@ $(function(){
         }
 
         // 发起登录请求
+       //  构造请求参数
+        var params = {
+            'mobile':mobile,
+            'password':password
+        }
+        $.ajax({
+            url:'/password/login',
+            type:'post',
+            data:JSON.stringify(params),
+            contentType:'application/json',
+            headers:{
+                'X-CSRFToken':getCookie('csrf_token')
+            },
+            success:function (resp) {
+                if(resp.errno == '0'){
+                    location.reload()
+                }
+                else{
+                   alert(resp.errmsg)
+                   $("#register-password-err").html(resp.errmsg);
+                   $("#register-password-err").show();
+                }
+
+            }
+        })
     })
 
 
@@ -152,13 +177,13 @@ $(function(){
         }
 
         // 发送ajax请求
-        .ajax({
-            url:'/password/regsiter',
+        $.ajax({
+            url:'/passport/register',
             type:'post',
             data:JSON.stringify(params),
             contentType:'application/json',
-            header:{
-                'X-CSRFToken':getCookie('csrf_token')
+            headers:{
+                 'X-CSRFToken':getCookie('csrf_token')
             },
             success:function (resp) {
                 if(resp.errno == '0'){

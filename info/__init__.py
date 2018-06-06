@@ -14,11 +14,12 @@ from logging.handlers import RotatingFileHandler
 # 导入redis数据库
 from redis import StrictRedis
 from flask_wtf import csrf
-# 需要指定host port,此处可以使用配置文件中的变量,用来缓存和业务逻辑相关的数据
-redis_store = StrictRedis(Config.REDIS_HOST,Config.REDIS_PORT,decode_responses=True)
+
+
 # 实例化sqlalchemy数据库对象
 db = SQLAlchemy()
-
+# 需要指定host port,此处可以使用配置文件中的变量,用来缓存和业务逻辑相关的数据
+redis_store = StrictRedis(Config.REDIS_HOST,Config.REDIS_PORT,decode_responses=True)
 # 集成项目日志（不需要自己写）
 # 设置日志的记录等级
 logging.basicConfig(level=logging.DEBUG) # 调试debug级
@@ -34,14 +35,17 @@ logging.getLogger().addHandler(file_log_handler)
 # 创建程序实例的工厂方法：封装app,动态的加载app
 def create_app(config_name):
     app=Flask(__name__)
-    # 把db对象和app关联
-    db.init_app(app)
+
     # 使用配置对象
     app.config.from_object(config[config_name])
+    # 把db对象和app关联
+    db.init_app(app)   # ***  必须导入配置文件之后，再db的初始化
     # 实例化session对象
     Session(app)
     # 实例化csrf
     CSRFProtect(app)
+
+
 
     # 使用请求钩子，在每次请求后执行设置csrf_token
     @app.after_request
