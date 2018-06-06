@@ -1,8 +1,8 @@
 from flask import session,render_template,current_app,jsonify
 # 导入蓝图对象
 from . import news_blue
-# 导入模型类User
-from info.models import User
+# 导入模型类User 和 News
+from info.models import User,News
 # 导入自定义状态码
 from info.utils.response_code import RET
 
@@ -23,10 +23,25 @@ def index():
             user = User.query.get(user_id)
         except Exception as e:
             current_app.logger.error(e)
-            return jsonify(errno = RET.DBERR,errmsg = '数据查询失败')
+            # return jsonify(errno = RET.DBERR,errmsg = '数据查询失败')
+
+    # 2018/6/6 --1 项目首页的点击排行：默认按照点击次数进行排序，limit 6条
+    try:
+        # 访问得到的数据为对象
+        news_list = News.query.order_by(News.clicks.desc()).limit(6)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno =RET.DBERR,errmsg ='数据查询失败')
+    if not news_list:
+        return jsonify(errno =RET.NODATA,errmsg ='没有新闻数据')
+    # 遍历对象之后，然后在列表中以字典形式保存
+    news_dict_list = []
+    for news in news_list:
+        news_dict_list.append(news.to_dict())
 
     data = {
-        'user_info':user.to_dict() if user else None
+        'user_info':user.to_dict() if user else None,
+        'news_dict_list':news_dict_list
     }
 
     return render_template('news/index.html',data=data)

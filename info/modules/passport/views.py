@@ -202,3 +202,16 @@ def login():
     # 返回结果给浏览器端
     return jsonify(errno=RET.OK, errmsg='OK')
 
+@passport_blu.route('/logout')
+def logout():
+    """
+    用户退出：
+    退出的本质：把缓存的用户信息清空　　
+    :return:
+    """
+    # session.clear() 会把用户信息全部清空，包括csrf_token的值
+    # session.pop()　指定我们需要清空的内容
+    session.pop('user_id')
+    session.pop('nick_name')
+    session.pop('mobile')
+    return jsonify(errno=RET.OK,errmsg='用户已退出')

@@ -1,7 +1,7 @@
 from flask import Flask
 # 导入flask_sqlalchemy数据库扩展包/home/python/flask_day08
 from flask_sqlalchemy import SQLAlchemy
-# 导入扩展flask_session,可以配置session信息的存储0.
+# 导入扩展flask_session,可以配置session信息的存储位置
 from flask_session import Session
 # 导入flask_wtf扩展包
 from flask_wtf import CSRFProtect
@@ -56,6 +56,11 @@ def create_app(config_name):
         # 把csrf_token 写入到客户端浏览器cookie中
         response.set_cookie('csrf_token',csrf_token)
         return response
+
+    # 导入过滤器模块
+    from info.utils.commons import do_index_class
+    # 添加自定义过滤器
+    app.add_template_filter(do_index_class, 'index_class')
     # 导入蓝图对象
     from info.modules.news import news_blue
     # 注册蓝图对象
