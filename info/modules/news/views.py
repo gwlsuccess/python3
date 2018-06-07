@@ -139,6 +139,7 @@ def get_news_detail(news_id):
     }
     # 返回新闻的详细数据
     return render_template('news/detail.html',data = data)
+
 # 加载项目小图标
 @news_blue.route('/favicon.ico')
 def favicon():
