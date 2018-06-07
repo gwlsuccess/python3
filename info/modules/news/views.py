@@ -1,4 +1,4 @@
-from flask import session,render_template,current_app,jsonify,request
+from flask import session,render_template,current_app,jsonify,request,g
 # 导入蓝图对象
 from . import news_blue
 # 导入模型类User 和 News
@@ -6,7 +6,9 @@ from info.models import User,News,Category
 # 导入自定义状态码
 from info.utils.response_code import RET
 # 导入常量定义文件
-from info import constants
+from info import constants,db
+# 导入自定义的登陆验证装饰器
+from info.utils.commons import login_required
 # 使用蓝图对象
 @news_blue.route('/')
 def index():
@@ -103,8 +105,40 @@ def get_news_list():
      # 返回结果
      return jsonify(errno =RET.OK,errmsg ='OK',data = data)
 
-# 新闻页面详情
-
+# 新闻页面详情加载，需要自定义一个装饰器
+@news_blue.route('/<int:news_id>')
+# 添加登陆验证装饰器
+@login_required
+def get_news_detail(news_id):
+    # 使用g 对象保存程序运行过程中的临时数据
+    user = g.user
+    # 一般情况下，用户未登陆时，也是可以访问详细信息，收藏时，需要用户必须登陆
+    if not user:
+        return jsonify(errno =RET.SESSIONERR,errmsg ='用户未登陆')
+    # 使用news_id 查询数据库
+    try:
+        news = News.query.get(news_id)
+    except Exception as  e:
+        current_app.logger.error(e)
+        return jsonify(errno =RET.DBERR,errmsg ='新闻查询失败')
+    if not news:
+        return jsonify(errno =RET.NODATA,errmsg ='未查询到新闻的详细信息')
+    # 新闻的点击量加　１
+    news.clicks += 1
+    try:
+        # 新闻点击量保存到数据库中，可以设置自动提交
+        db.session.add(news)
+        db.session.commit()
+    except  Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno =RET.DBERR,errmsg ='保存数据失败')
+    data = {
+        # 'user':user.to_dict() if user else None,
+        'news':news.to_dict()
+    }
+    # 返回新闻的详细数据
+    return render_template('news/detail.html',data = data)
 # 加载项目小图标
 @news_blue.route('/favicon.ico')
 def favicon():
